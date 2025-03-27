@@ -1,0 +1,33 @@
+volumes:
+  database_data:
+
+services:
+  nginx:
+    platform: "${PLATFORM:-linux/arm64}"
+    image: nginx:latest
+    restart: unless-stopped
+    volumes:
+      - ./app:/var/www/app
+      - ./etc/docker/nginx:/etc/nginx/conf.d:ro
+    ports:
+      - "${NGINX_PORT}:80"
+
+  php:
+    platform: "${PLATFORM:-linux/arm64}"
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./etc/docker/php-fpm/Dockerfile
+    volumes:
+      - ./app:/var/www/app
+
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    ports:
+      - "5470:5432"
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
